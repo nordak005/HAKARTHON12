@@ -1,0 +1,498 @@
+{
+  "dataset": "ConstraintBench-Small",
+  "disclaimer": "NOT MBPP, HumanEval, or any official benchmark.",
+  "n_cases": 18,
+  "n_constraint_instances": 25,
+  "constraintguard": {
+    "identification_accuracy": 1.0,
+    "state_accuracy": 1.0,
+    "violation_precision": 1.0,
+    "violation_recall": 1.0,
+    "e2e_accuracy": 1.0,
+    "tp": 7,
+    "fp": 0,
+    "fn": 0,
+    "tn": 11,
+    "total_violated": 6,
+    "total_satisfied": 13,
+    "total_uncertain": 1,
+    "total_conflicts": 2
+  },
+  "baseline": {
+    "identification_accuracy": 1.0,
+    "state_accuracy": 1.0,
+    "violation_precision": 1.0,
+    "violation_recall": 0.8571428571428571,
+    "e2e_accuracy": 0.9444444444444444,
+    "tp": 6,
+    "fp": 0,
+    "fn": 1,
+    "tn": 11
+  },
+  "per_case": [
+    {
+      "case_id": "A1",
+      "category": "NO_BUILTIN",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "no_builtin"
+      ],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "no_builtin"
+      ],
+      "bl_violated_types": [
+        "no_builtin"
+      ]
+    },
+    {
+      "case_id": "A2",
+      "category": "NO_BUILTIN",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "no_builtin"
+      ],
+      "bl_active_types": [
+        "no_builtin"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "A3",
+      "category": "NO_BUILTIN",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "no_builtin"
+      ],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "no_builtin"
+      ],
+      "bl_violated_types": [
+        "no_builtin"
+      ]
+    },
+    {
+      "case_id": "A4",
+      "category": "NO_BUILTIN",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "no_builtin"
+      ],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "no_builtin"
+      ],
+      "bl_violated_types": [
+        "no_builtin"
+      ]
+    },
+    {
+      "case_id": "B1",
+      "category": "SUPERSESSION",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "algorithm"
+      ],
+      "cg_superseded_types": [
+        "algorithm"
+      ],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "algorithm"
+      ],
+      "bl_active_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "B2",
+      "category": "SUPERSESSION",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "algorithm"
+      ],
+      "cg_superseded_types": [
+        "algorithm"
+      ],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "algorithm"
+      ],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "bl_violated_types": [
+        "algorithm"
+      ]
+    },
+    {
+      "case_id": "C1",
+      "category": "MULTI_SUPERSESSION",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "algorithm"
+      ],
+      "cg_superseded_types": [
+        "algorithm",
+        "algorithm"
+      ],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "algorithm"
+      ],
+      "bl_active_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "D1",
+      "category": "REINFORCEMENT",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "no_builtin"
+      ],
+      "bl_active_types": [
+        "no_builtin"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "E1",
+      "category": "CONFLICT",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": false,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [
+        "error_handling",
+        "error_handling"
+      ],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "error_handling"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "F1",
+      "category": "ERROR_HANDLING",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "error_handling"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "error_handling"
+      ],
+      "bl_active_types": [
+        "error_handling"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "F2",
+      "category": "ERROR_HANDLING",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "error_handling"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "error_handling"
+      ],
+      "bl_active_types": [
+        "error_handling"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "G1",
+      "category": "NAMING",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "naming"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "naming"
+      ],
+      "bl_active_types": [
+        "naming"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "G2",
+      "category": "NAMING",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "naming"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "naming"
+      ],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "naming"
+      ],
+      "bl_violated_types": [
+        "naming"
+      ]
+    },
+    {
+      "case_id": "I1",
+      "category": "STRUCTURE",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "structure"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "structure"
+      ],
+      "bl_active_types": [
+        "structure"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "J1",
+      "category": "COMPLEXITY",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "complexity"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [],
+      "bl_active_types": [
+        "complexity"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "K1",
+      "category": "MIXED",
+      "expected_overall": "FAIL",
+      "cg_overall": "FAIL",
+      "bl_overall": "FAIL",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin",
+        "error_handling"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [
+        "no_builtin"
+      ],
+      "cg_satisfied_types": [
+        "error_handling"
+      ],
+      "bl_active_types": [
+        "no_builtin",
+        "error_handling"
+      ],
+      "bl_violated_types": [
+        "no_builtin"
+      ]
+    },
+    {
+      "case_id": "K2",
+      "category": "MIXED",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "no_builtin",
+        "naming"
+      ],
+      "cg_superseded_types": [],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "no_builtin",
+        "naming"
+      ],
+      "bl_active_types": [
+        "no_builtin",
+        "naming"
+      ],
+      "bl_violated_types": []
+    },
+    {
+      "case_id": "K3",
+      "category": "MIXED",
+      "expected_overall": "PASS",
+      "cg_overall": "PASS",
+      "bl_overall": "PASS",
+      "cg_overall_correct": true,
+      "bl_overall_correct": true,
+      "cg_states_correct": true,
+      "cg_types_found": true,
+      "cg_active_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "cg_superseded_types": [
+        "algorithm"
+      ],
+      "cg_conflicting_types": [],
+      "cg_violated_types": [],
+      "cg_satisfied_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "bl_active_types": [
+        "algorithm",
+        "no_builtin"
+      ],
+      "bl_violated_types": []
+    }
+  ],
+  "error_analysis": []
+}
