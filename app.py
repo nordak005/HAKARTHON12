@@ -37,7 +37,7 @@ from constraint_guard.verifier.engine import VerificationEngine
 
 # Streamlit Page Config
 st.set_page_config(
-    page_title="ConstraintGuard — Safe AI Coding Agent",
+    page_title="ConstraintGuard — AI Coding Agent & Verifier",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -85,12 +85,12 @@ html, body,
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Top Bar Styling */
+/* Top Header Bar */
 .cg-top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(15, 15, 22, 0.75);
+    background: rgba(15, 15, 22, 0.80);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 12px;
@@ -112,17 +112,6 @@ html, body,
     font-size: 0.75rem;
     color: #64748b;
     font-weight: 400;
-}
-.cg-top-center {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.cg-top-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 /* Pill Badges */
@@ -166,22 +155,18 @@ html, body,
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 18px 22px;
+    padding: 16px 20px;
     margin-bottom: 16px;
 }
 .cg-hero-title {
-    font-size: 1.35rem;
+    font-size: 1.30rem;
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 .cg-hero-sub {
     font-size: 0.85rem;
     color: #94a3b8;
-    margin-bottom: 14px;
 }
 
 /* Chat Message Bubbles */
@@ -224,20 +209,10 @@ html, body,
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #94a3b8;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-}
-
-/* Code Editor Window */
-.cg-code-box {
-    background: #09090d !important;
-    border: 1px solid rgba(255, 255, 255, 0.09) !important;
-    border-radius: 10px !important;
-    padding: 12px !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.84rem !important;
 }
 
 /* Form Inputs & Selects */
@@ -284,24 +259,6 @@ html, body,
     border-color: #60a5fa !important;
 }
 
-/* Metric Cards */
-[data-testid="stMetric"] {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
-    border-radius: 8px !important;
-    padding: 8px 12px !important;
-}
-[data-testid="stMetricLabel"] {
-    color: #64748b !important;
-    font-size: 0.68rem !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-}
-[data-testid="stMetricValue"] {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
 /* Status Card Row */
 .cg-status-row {
     display: flex;
@@ -338,12 +295,6 @@ html, body,
     border-radius: 4px;
     font-family: 'JetBrains Mono', monospace;
 }
-.cg-c-type {
-    font-size: 0.65rem;
-    color: #64748b;
-    font-family: 'JetBrains Mono', monospace;
-    text-transform: uppercase;
-}
 .cg-c-text {
     font-size: 0.80rem;
     color: #cbd5e1;
@@ -379,48 +330,121 @@ if "discovered_models" not in st.session_state:
     st.session_state.discovered_models = []
 if "execution_mode" not in st.session_state:
     st.session_state.execution_mode = "Deterministic Demo Mode 🎯" if not os.getenv("LLM_API_KEY") else "Live LLM Mode ⚡"
+
+# Default Initial Scenario A
+default_init_conv = [
+    {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
+    {"turn": 2, "text": "Also handle an empty list gracefully by returning None."},
+    {"turn": 3, "text": "Keep the previous restrictions."},
+]
+default_init_code = "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+
 if "conversation" not in st.session_state:
-    st.session_state.conversation = []
+    st.session_state.conversation = default_init_conv
+if "conv_raw_text" not in st.session_state:
+    st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in default_init_conv])
 if "code" not in st.session_state:
-    st.session_state.code = ""
+    st.session_state.code = default_init_code
 if "report" not in st.session_state:
     st.session_state.report = None
 if "repair_history" not in st.session_state:
     st.session_state.repair_history = None
 if "cg_activity_log" not in st.session_state:
     st.session_state.cg_activity_log = [
-        f"[{datetime.now().strftime('%H:%M:%S')}] ConstraintGuard Engine Initialized"
+        f"[{datetime.now().strftime('%H:%M:%S')}] ConstraintGuard AI Engine Initialized"
     ]
 
 def log_activity(msg: str):
     timestamp = datetime.now().strftime("%H:%M:%S")
     st.session_state.cg_activity_log.insert(0, f"[{timestamp}] {msg}")
 
+def set_conversation(conv_list, initial_code=None):
+    st.session_state.conversation = conv_list
+    st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in conv_list])
+    if initial_code is not None:
+        st.session_state.code = initial_code
+    st.session_state.report = None
+    st.session_state.repair_history = None
 
-# ── Sidebar Navigation & Configuration ─────────────────────────────────────────
+
+# ── Top Glass Header & AI Agent Selector ──────────────────────────────────────
+catalog = get_model_catalog()
+all_models = list(catalog)
+for m in st.session_state.discovered_models:
+    if m not in all_models:
+        all_models.append(m)
+if st.session_state.selected_model not in all_models:
+    all_models.insert(0, st.session_state.selected_model)
+
+try:
+    current_model_idx = all_models.index(st.session_state.selected_model)
+except ValueError:
+    current_model_idx = 0
+
 is_demo = "Demo" in st.session_state.execution_mode
 
+# Top Header Layout
+header_col1, header_col2, header_col3 = st.columns([8, 8, 4])
+
+with header_col1:
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.6rem;">🛡️</span>
+      <div>
+        <div style="font-size:1.3rem;font-weight:700;color:#ffffff;line-height:1.2;">ConstraintGuard</div>
+        <div style="font-size:0.75rem;color:#64748b;">Autonomous Safe Code Verification Agent</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with header_col2:
+    if not is_demo:
+        chosen_header_model = st.selectbox(
+            "🤖 Choose AI Agent / Groq Model:",
+            options=all_models,
+            index=current_model_idx,
+            key="header_agent_selector",
+            help="Select the Groq LLM Agent used for code generation and repair.",
+        )
+        if chosen_header_model != st.session_state.selected_model:
+            st.session_state.selected_model = chosen_header_model
+            st.session_state.model_status = "🟡 Availability not checked"
+            log_activity(f"AI Agent model changed to: {chosen_header_model}")
+            st.rerun()
+    else:
+        st.markdown('<div class="cg-pill purple" style="margin-top:8px;">🎯 Offline Deterministic Agent (Mock Mode)</div>', unsafe_allow_html=True)
+
+with header_col3:
+    mode_status_txt = "DEMO (Mock)" if is_demo else ("CONNECTED" if "🟢" in st.session_state.model_status else "UNCHECKED")
+    st.markdown(f"""
+    <div style="text-align:right;margin-top:6px;">
+      <span class="cg-pill green">✔ Verifier Ready</span>
+      <span class="cg-pill blue">{mode_status_txt}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+
+# ── Sidebar Navigation & Configuration ─────────────────────────────────────────
 st.sidebar.markdown("""
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-  <span style="font-size:1.5rem;">🛡️</span>
-  <span style="font-size:1.1rem;font-weight:700;color:#ffffff;">ConstraintGuard</span>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+  <span style="font-size:1.4rem;">🛡️</span>
+  <span style="font-size:1.05rem;font-weight:700;color:#ffffff;">ConstraintGuard IDE</span>
 </div>
 """, unsafe_allow_html=True)
 
-# Navigation Menu Options
+# Navigation Items
 st.sidebar.markdown("""
-<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:20px;">
-  <div style="background:rgba(59,130,246,0.20);border:1px solid rgba(59,130,246,0.40);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:0.82rem;font-weight:600;">💬 Chat &amp; Code</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">🕸️ Constraint Graph</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">🛡️ Verification</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">🔧 Repair History</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">⚙️ Model &amp; Settings</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">📊 Evaluation</div>
-  <div style="padding:6px 12px;color:#64748b;font-size:0.80rem;">🎯 Demo Scenarios</div>
+<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px;">
+  <div style="background:rgba(59,130,246,0.20);border:1px solid rgba(59,130,246,0.40);color:#ffffff;padding:7px 10px;border-radius:8px;font-size:0.80rem;font-weight:600;">💬 Multi-Turn Workspace</div>
+  <div style="padding:6px 10px;color:#64748b;font-size:0.80rem;">🕸️ Versioned Constraint Graph</div>
+  <div style="padding:6px 10px;color:#64748b;font-size:0.80rem;">🛡️ Hybrid Verifier</div>
+  <div style="padding:6px 10px;color:#64748b;font-size:0.80rem;">🔧 Repair Loop Stepper</div>
+  <div style="padding:6px 10px;color:#64748b;font-size:0.80rem;">⚙️ LLM Provider Settings</div>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
 st.sidebar.markdown('<div class="cg-card-title">Execution Mode</div>', unsafe_allow_html=True)
 mode_choice = st.sidebar.radio(
     "Execution Mode:",
@@ -433,16 +457,16 @@ is_demo = "Demo" in mode_choice
 
 if not is_demo:
     st.sidebar.markdown("---")
-    st.sidebar.markdown('<div class="cg-card-title">Provider Config</div>', unsafe_allow_html=True)
-    st.sidebar.markdown("<span style='font-size:0.75rem;color:#64748b;'>Groq (OpenAI Compatible)</span>", unsafe_allow_html=True)
+    st.sidebar.markdown('<div class="cg-card-title">🤖 AI Agent / Provider Config</div>', unsafe_allow_html=True)
+    st.sidebar.markdown("<span style='font-size:0.75rem;color:#64748b;'>Groq (OpenAI-Compatible Endpoint)</span>", unsafe_allow_html=True)
     
     api_key_input = st.sidebar.text_input(
-        "API Key",
+        "API Key (LLM_API_KEY)",
         value=os.getenv("LLM_API_KEY", ""),
         type="password",
     )
     base_url_input = st.sidebar.text_input(
-        "Base URL",
+        "Base URL (LLM_BASE_URL)",
         value=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
     )
     
@@ -456,35 +480,23 @@ if not is_demo:
         st.sidebar.warning("⚠️ No API Key entered. Falling back to Mock Provider.")
         provider = get_default_provider()
 
-    catalog = get_model_catalog()
-    combined_models = list(catalog)
-    for m in st.session_state.discovered_models:
-        if m not in combined_models:
-            combined_models.append(m)
-
-    if st.session_state.selected_model not in combined_models:
-        combined_models.insert(0, st.session_state.selected_model)
-
-    try:
-        curr_idx = combined_models.index(st.session_state.selected_model)
-    except ValueError:
-        curr_idx = 0
-
-    chosen_model = st.sidebar.selectbox(
-        "Model",
-        options=combined_models,
-        index=curr_idx,
+    sidebar_model = st.sidebar.selectbox(
+        "Select Groq AI Model",
+        options=all_models,
+        index=current_model_idx,
+        key="sb_agent_selector",
     )
-    if chosen_model != st.session_state.selected_model:
-        st.session_state.selected_model = chosen_model
+    if sidebar_model != st.session_state.selected_model:
+        st.session_state.selected_model = sidebar_model
         st.session_state.model_status = "🟡 Availability not checked"
         if hasattr(provider, "model"):
-            provider.model = chosen_model
-        log_activity(f"Selected Groq Model changed to: {chosen_model}")
+            provider.model = sidebar_model
+        log_activity(f"Selected AI Model changed to: {sidebar_model}")
+        st.rerun()
 
     st.sidebar.markdown(
         f"<div style='background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:0.72rem;color:#4ade80;'>"
-        f"<b>Model Available</b><br/><span style='color:#64748b;'>{st.session_state.model_status}</span>"
+        f"<b>Status</b>: {st.session_state.model_status}"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -496,21 +508,21 @@ if not is_demo:
             if models_data:
                 model_ids = [m["id"] for m in models_data if isinstance(m, dict) and "id" in m]
                 st.session_state.discovered_models = model_ids
-                st.sidebar.success(f"Discovered {len(model_ids)} models.")
-                log_activity(f"Discovered {len(model_ids)} online models from Groq endpoint.")
+                st.sidebar.success(f"Found {len(model_ids)} online models.")
+                log_activity(f"Discovered {len(model_ids)} online Groq models.")
             else:
                 st.sidebar.warning("No online models returned.")
 
     with sb_btn2:
-        if st.button("🧪 Test Selected", key="sb_test_model"):
-            with st.spinner("Testing access..."):
+        if st.button("🧪 Test Agent", key="sb_test_model"):
+            with st.spinner("Testing AI Agent access..."):
                 res = provider.test_model_availability(st.session_state.selected_model)
                 st.session_state.model_status = res["status_label"]
                 if res["available"]:
                     st.sidebar.success(res["message"])
                 else:
                     st.sidebar.error(res["message"])
-                log_activity(f"Model availability test ({st.session_state.selected_model}): {res['status_label']}")
+                log_activity(f"Model test ({st.session_state.selected_model}): {res['status_label']}")
 
 else:
     provider = DeterministicMockProvider(
@@ -529,87 +541,60 @@ else:
         return None
     return lst[0]""",
     )
-    st.sidebar.info("🎯 Running in Deterministic Offline Demo Mode")
+    st.sidebar.info("🎯 Running in Offline Deterministic Demo Mode")
 
 
-# ── Top Glass Header Bar ──────────────────────────────────────────────────────
-llm_badge_html = (
-    '<span class="cg-pill green">✔ LLM Connected (Groq)</span>'
-    if (not is_demo and "🟢" in st.session_state.model_status)
-    else (
-        '<span class="cg-pill red">🔴 LLM Unavailable</span>'
-        if (not is_demo and "🔴" in st.session_state.model_status)
-        else ('<span class="cg-pill green">✔ Ready (Mock)</span>' if is_demo else '<span class="cg-pill">🟡 Unchecked</span>')
-    )
-)
-mode_badge_html = f'<span class="cg-pill purple">Mode: {"Demo" if is_demo else "Live LLM"}</span>'
-model_disp = "mock-demo" if is_demo else st.session_state.selected_model
-
-st.markdown(f"""
-<div class="cg-top-bar">
-  <div class="cg-top-left">
-    <span style="font-size:1.4rem;">🛡️</span>
-    <div>
-      <div class="cg-top-title">ConstraintGuard</div>
-      <div class="cg-top-sub">Your Safe Coding AI Agent</div>
-    </div>
-  </div>
-  <div class="cg-top-center">
-    <span class="cg-pill">Model: {model_disp}</span>
-    {llm_badge_html}
-    <span class="cg-pill green">✔ Verifier Ready</span>
-    {mode_badge_html}
-  </div>
-  <div class="cg-top-right">
-    <span class="cg-pill">⚙ Settings</span>
-    <span class="cg-pill">❓ Help</span>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-
-# ── Hero Greeting Card ────────────────────────────────────────────────────────
+# ── Hero Scenario Selector Banner ──────────────────────────────────────────────
 st.markdown("""
 <div class="cg-hero">
-  <div class="cg-hero-title">👋 How can I help you build today?</div>
-  <div class="cg-hero-sub">I generate Python code and ConstraintGuard verifies it against your requirements.</div>
+  <div class="cg-hero-title">👋 How can I help you verify code today?</div>
+  <div class="cg-hero-sub">Select a multi-turn scenario preset or add custom requirements below.</div>
 </div>
 """, unsafe_allow_html=True)
 
-preset_col1, preset_col2, preset_col3, preset_col4, preset_col5 = st.columns(5)
+preset_col1, preset_col2, preset_col3, preset_col4 = st.columns(4)
 with preset_col1:
-    p1 = st.button("✏️ Write with constraints", key="p1_btn")
-with preset_col2:
-    p2 = st.button("🔑 Explain & modify code", key="p2_btn")
-with preset_col3:
-    p3 = st.button("🐞 Debug & fix violations", key="p3_btn")
-with preset_col4:
-    p4 = st.button("🎨 Create specific style", key="p4_btn")
-with preset_col5:
-    p5 = st.button("🎯 Try demo scenario", key="p5_btn")
+    if st.button("🚫 Scenario A: Built-in max() Prohibition", key="scen_a_btn"):
+        set_conversation(
+            [
+                {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
+                {"turn": 2, "text": "Also handle an empty list gracefully by returning None."},
+                {"turn": 3, "text": "Keep the previous restrictions."},
+            ],
+            code_text="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+        )
+        log_activity("Loaded Scenario A preset.")
+        st.rerun()
 
-if p1 or p3:
-    st.session_state.conversation = [
-        {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
-        {"turn": 2, "text": "Also handle an empty list gracefully by returning None."},
-        {"turn": 3, "text": "Keep the previous restrictions."},
-    ]
-    st.session_state.code = "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
-    st.session_state.report = None
-elif p4:
-    st.session_state.conversation = [
-        {"turn": 1, "text": "Use recursion to compute factorial."},
-        {"turn": 2, "text": "Do not use recursion. Write an iterative solution instead."},
-    ]
-    st.session_state.code = "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
-    st.session_state.report = None
-elif p5:
-    st.session_state.conversation = [
-        {"turn": 1, "text": "Return None for empty input."},
-        {"turn": 2, "text": "Raise ValueError for empty input."},
-    ]
-    st.session_state.code = "def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
-    st.session_state.report = None
+with preset_col2:
+    if st.button("🔄 Scenario B: Recursion Supersession", key="scen_b_btn"):
+        set_conversation(
+            [
+                {"turn": 1, "text": "Use recursion to compute factorial."},
+                {"turn": 2, "text": "Do not use recursion. Write an iterative solution instead."},
+            ],
+            code_text="def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
+        )
+        log_activity("Loaded Scenario B preset.")
+        st.rerun()
+
+with preset_col3:
+    if st.button("⚠️ Scenario C: Unresolved Conflict", key="scen_c_btn"):
+        set_conversation(
+            [
+                {"turn": 1, "text": "Return None for empty input."},
+                {"turn": 2, "text": "Raise ValueError for empty input."},
+            ],
+            code_text="def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
+        )
+        log_activity("Loaded Scenario C preset.")
+        st.rerun()
+
+with preset_col4:
+    if st.button("🗑️ Clear Workspace", key="clear_all_btn"):
+        set_conversation([], code_text="")
+        log_activity("Workspace cleared.")
+        st.rerun()
 
 
 # Compute extracted graph and resolved state
@@ -624,21 +609,20 @@ else:
     resolved_state = resolver = None
 
 
-# ── Main 3-Column Glassmorphic Workspace ───────────────────────────────────────
+# ── Main 3-Column IDE Layout ───────────────────────────────────────────────────
 col_left, col_mid, col_right = st.columns([10, 12, 8])
 
-# Action Trigger Flags
 do_generate = False
 do_verify = False
 do_repair = False
 do_autoloop = False
 
-# ── COLUMN 1: Conversation Panel ──────────────────────────────────────────────
+# ── COLUMN 1: Conversation History & Quick Prompts ─────────────────────────────
 with col_left:
     st.markdown(f"""
     <div class="cg-card">
       <div class="cg-card-title">
-        <span>Conversation</span>
+        <span>💬 Multi-Turn Conversation History</span>
         <span class="cg-pill blue">{len(parsed_conv)} turns</span>
       </div>
     """, unsafe_allow_html=True)
@@ -650,66 +634,87 @@ with col_left:
               <div class="cg-avatar user">Y</div>
               <div style="flex-grow:1;">
                 <div class="cg-msg-header"><span>You</span><span>Turn {t['turn']}</span></div>
-                <div style="color:#e2e8f0;">{t['text']}</div>
+                <div style="color:#e2e8f0;font-weight:500;">{t['text']}</div>
               </div>
             </div>
             """, unsafe_allow_html=True)
-            
-        st.markdown(f"""
-        <div class="cg-chat-msg">
-          <div class="cg-avatar assistant">🛡️</div>
-          <div style="flex-grow:1;">
-            <div class="cg-msg-header"><span>ConstraintGuard ({model_disp})</span></div>
-            <div style="color:#cbd5e1;">I will enforce all active constraints extracted from this conversation.</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
 
-    with st.expander("📝 Edit Raw Conversation Input", expanded=not bool(parsed_conv)):
-        conv_text_area = st.text_area(
-            "Turns (Turn X: text)",
-            value="\n".join(
-                [f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation]
-            ),
-            height=120,
-            key="conv_raw_editor",
+    # Chat Input Box for New Requirement / Turn
+    st.markdown('<div style="font-size:0.70rem;font-weight:600;color:#64748b;margin-top:10px;margin-bottom:4px;">➕ ADD NEW REQUIREMENT TURN:</div>', unsafe_allow_html=True)
+    new_turn_input = st.text_input(
+        "Type your prompt or constraint here...",
+        key="new_turn_input_box",
+        placeholder="e.g. Do not use built-in sum() or handle negative numbers",
+        label_visibility="collapsed",
+    )
+    if st.button("🚀 Add Turn & Extract Constraints", key="add_turn_btn", type="primary"):
+        if new_turn_input.strip():
+            next_turn_num = len(st.session_state.conversation) + 1
+            st.session_state.conversation.append({"turn": next_turn_num, "text": new_turn_input.strip()})
+            st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+            log_activity(f"Added Turn {next_turn_num}: {new_turn_input.strip()}")
+            st.rerun()
+
+    # Raw Turn Lines Editor Expander
+    with st.expander("📝 View / Edit All Raw Conversation Turn Lines", expanded=not bool(parsed_conv)):
+        edited_raw_text = st.text_area(
+            "Raw Turn Lines",
+            value=st.session_state.conv_raw_text,
+            height=140,
+            key="conv_raw_textarea",
         )
-
-        new_parsed = []
-        for line in conv_text_area.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            if ":" in line and line.lower().startswith("turn"):
-                parts = line.split(":", 1)
-                turn_num = int("".join(filter(str.isdigit, parts[0])) or "1")
-                text = parts[1].strip()
-                new_parsed.append({"turn": turn_num, "text": text})
-            else:
-                new_parsed.append({"turn": len(new_parsed) + 1, "text": line})
-
-        if new_parsed != st.session_state.conversation:
+        if edited_raw_text != st.session_state.conv_raw_text:
+            st.session_state.conv_raw_text = edited_raw_text
+            new_parsed = []
+            for line in edited_raw_text.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                if ":" in line and line.lower().startswith("turn"):
+                    parts = line.split(":", 1)
+                    turn_num = int("".join(filter(str.isdigit, parts[0])) or "1")
+                    text = parts[1].strip()
+                    new_parsed.append({"turn": turn_num, "text": text})
+                else:
+                    new_parsed.append({"turn": len(new_parsed) + 1, "text": line})
             st.session_state.conversation = new_parsed
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Quick Prompt Shortcuts Card
+    st.markdown("""
+    <div class="cg-card">
+      <div class="cg-card-title">⚡ Quick Constraint Shortcuts</div>
+    """, unsafe_allow_html=True)
+    
+    qp_col1, qp_col2 = st.columns(2)
+    with qp_col1:
+        if st.button("🚫 Do not use max()", key="qp_max"):
+            st.session_state.conversation.append({"turn": len(st.session_state.conversation) + 1, "text": "Do not use built-in max()."})
+            st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+            log_activity("Added quick prompt: Do not use max()")
+            st.rerun()
+        if st.button("🛡️ Handle empty input", key="qp_empty"):
+            st.session_state.conversation.append({"turn": len(st.session_state.conversation) + 1, "text": "Handle an empty list gracefully by returning None."})
+            st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+            log_activity("Added quick prompt: Handle empty input")
+            st.rerun()
+    with qp_col2:
+        if st.button("🔄 No recursion", key="qp_recur"):
+            st.session_state.conversation.append({"turn": len(st.session_state.conversation) + 1, "text": "Do not use recursion. Write an iterative solution instead."})
+            st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+            log_activity("Added quick prompt: No recursion")
+            st.rerun()
+        if st.button("⚠️ Raise ValueError", key="qp_valerr"):
+            st.session_state.conversation.append({"turn": len(st.session_state.conversation) + 1, "text": "Raise ValueError for empty or invalid input."})
+            st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+            log_activity("Added quick prompt: Raise ValueError")
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Quick Prompts Box
-    st.markdown("""
-    <div class="cg-card">
-      <div class="cg-card-title">Quick Prompts</div>
-    """, unsafe_allow_html=True)
-    qp1, qp2 = st.columns(2)
-    with qp1:
-        st.button("⚙️ Maximum without max()", key="qp1")
-        st.button("⚡ Handle edge cases", key="qp2")
-    with qp2:
-        st.button("🔄 No recursion", key="qp3")
-        st.button("📝 Follow PEP 8 style", key="qp4")
-    st.markdown("</div>", unsafe_allow_html=True)
 
-
-# ── COLUMN 2: Code Editor & Controls Panel ─────────────────────────────────────
+# ── COLUMN 2: Code Editor Workspace & Live Repair ──────────────────────────────
 with col_mid:
     # Toolbar Action Row
     tb1, tb2, tb3, tb4 = st.columns(4)
@@ -718,9 +723,9 @@ with col_mid:
     with tb2:
         mb_ver = st.button("🔍 Verify Code", key="mb_ver_btn")
     with tb3:
-        mb_rep = st.button("🔧 Repair", key="mb_rep_btn")
+        mb_rep = st.button("🔧 Repair Violations", key="mb_rep_btn")
     with tb4:
-        mb_loop = st.button("🔄 Auto Repair", key="mb_loop_btn")
+        mb_loop = st.button("🔄 Auto Repair Loop", key="mb_loop_btn")
 
     do_generate = mb_gen
     do_verify = mb_ver
@@ -731,15 +736,15 @@ with col_mid:
     st.markdown("""
     <div class="cg-card">
       <div class="cg-card-title">
-        <span>Generated Code</span>
+        <span>💻 Candidate Python Code Editor</span>
         <span class="cg-pill">Python 3.10</span>
       </div>
     """, unsafe_allow_html=True)
 
     edited_code = st.text_area(
-        "Python Code Editor",
+        "Python Candidate Code Editor",
         value=st.session_state.code,
-        height=220,
+        height=240,
         label_visibility="collapsed",
     )
     if edited_code != st.session_state.code:
@@ -748,10 +753,9 @@ with col_mid:
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Code Controls bar below code
-    st.markdown('<div class="cg-card-title">Code Controls</div>', unsafe_allow_html=True)
     cc1, cc2, cc3 = st.columns(3)
     with cc1:
-        c_ver = st.button("▶ Verify This Code", key="cc_ver", type="primary")
+        c_ver = st.button("▶ Verify Candidate Code", key="cc_ver", type="primary")
     with cc2:
         c_rep = st.button("🔧 Repair Violations", key="cc_rep")
     with cc3:
@@ -764,16 +768,16 @@ with col_mid:
     # Perform Actions
     if do_generate:
         try:
-            with st.spinner("LLM generating candidate code..."):
+            with st.spinner("AI Agent generating candidate code..."):
                 code_gen = generate_code(st.session_state.conversation, provider=provider)
                 st.session_state.code = code_gen
                 st.session_state.repair_history = None
                 st.session_state.model_status = "🟢 Available"
-                log_activity("Candidate code generated successfully by LLM.")
+                log_activity("Candidate code generated successfully by AI Agent.")
                 st.rerun()
         except LLMProviderError as err:
             st.session_state.model_status = "🔴 Unavailable"
-            st.error(f"⚠️ LLM Error: {err.message}")
+            st.error(f"⚠️ LLM Provider Error ({err.error_category.value}): {err.message}")
             log_activity(f"LLM Error during Code Generation: {err.error_category.value}")
         except Exception as err:
             st.session_state.model_status = "🔴 Unavailable"
@@ -792,7 +796,7 @@ with col_mid:
     if do_repair:
         if st.session_state.report:
             try:
-                with st.spinner("LLM generating candidate repair fix..."):
+                with st.spinner("AI Agent generating repair fix..."):
                     repaired_code_res = repair_code(
                         conversation=st.session_state.conversation,
                         code=st.session_state.code,
@@ -806,7 +810,7 @@ with col_mid:
                         st.session_state.code, graph.get_all_constraints()
                     )
                     st.session_state.model_status = "🟢 Available"
-                    log_activity(f"Repair code generated. Re-verification verdict: {st.session_state.report.overall_status}")
+                    log_activity(f"Repair generated. Re-verification verdict: {st.session_state.report.overall_status}")
                     st.rerun()
             except Exception as err:
                 st.session_state.model_status = "🔴 Unavailable"
@@ -826,18 +830,18 @@ with col_mid:
                 st.session_state.code = history.final_code
                 st.session_state.report = history.final_report
                 st.session_state.model_status = "🟢 Available"
-                log_activity(f"Auto Repair Loop finished in {history.iterations_used} iter(s). Verdict: {history.final_report.overall_status}")
+                log_activity(f"Auto Repair Loop finished in {history.iterations_used} iter(s). Final verdict: {history.final_report.overall_status}")
                 st.rerun()
         except Exception as err:
             st.session_state.model_status = "🔴 Unavailable"
             st.error(f"⚠️ Auto Repair Error: {err}")
 
-    # Execution Output Box
+    # Execution Status Box
     st.markdown("""
     <div class="cg-card">
-      <div class="cg-card-title">⚡ Execution Output</div>
+      <div class="cg-card-title">⚡ Live Engine Execution Status</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:#94a3b8;">
-        Code ready. Click "Verify This Code" to evaluate against active constraints.
+        Candidate code is loaded. Click <b>▶ Verify Candidate Code</b> to test against active extracted constraints.
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -846,26 +850,27 @@ with col_mid:
 # ── COLUMN 3: Right Side Panel (Status, Constraints, Verification, Repair) ─────
 with col_right:
     # 1. System Status Card
+    model_name_disp = "Deterministic Mock" if is_demo else st.session_state.selected_model
     st.markdown(f"""
     <div class="cg-card">
       <div class="cg-card-title">
         <span>⚙️ System Status</span>
-        <span class="cg-pill green">All Systems Operational</span>
+        <span class="cg-pill green">All Operational</span>
       </div>
       <div class="cg-status-row">
-        <span class="cg-status-lbl"><span>LLM (Groq)</span></span>
-        <span class="cg-status-val" style="color:#4ade80;">✔ Connected</span>
+        <span class="cg-status-lbl"><span>AI Agent Provider</span></span>
+        <span class="cg-status-val">{"Offline Mock" if is_demo else "Groq Cloud"}</span>
       </div>
       <div class="cg-status-row">
-        <span class="cg-status-lbl"><span>Model</span></span>
-        <span class="cg-status-val">{model_disp}</span>
+        <span class="cg-status-lbl"><span>Selected Agent Model</span></span>
+        <span class="cg-status-val" style="color:#60a5fa;">{model_name_disp}</span>
       </div>
       <div class="cg-status-row">
-        <span class="cg-status-lbl"><span>Verifier</span></span>
+        <span class="cg-status-lbl"><span>Hybrid Verifier</span></span>
         <span class="cg-status-val" style="color:#4ade80;">✔ Ready</span>
       </div>
       <div class="cg-status-row">
-        <span class="cg-status-lbl"><span>Mode</span></span>
+        <span class="cg-status-lbl"><span>Execution Mode</span></span>
         <span class="cg-status-val" style="color:#c084fc;">{"Demo Mode" if is_demo else "Live LLM"}</span>
       </div>
     </div>
@@ -876,8 +881,8 @@ with col_right:
         st.markdown(f"""
         <div class="cg-card">
           <div class="cg-card-title">
-            <span>📋 Active Constraints</span>
-            <span class="cg-pill blue">{len(resolved_state.active)}</span>
+            <span>📋 Extracted Constraints</span>
+            <span class="cg-pill blue">{len(resolved_state.active)} Active</span>
           </div>
         """, unsafe_allow_html=True)
 
@@ -914,7 +919,7 @@ with col_right:
             </div>
             """, unsafe_allow_html=True)
 
-        with st.expander("🕸️ View Versioned Graph Edges", expanded=False):
+        with st.expander("🕸️ View Graph Dependency Edges", expanded=False):
             all_edges = graph.get_all_edges()
             if all_edges:
                 for src, dst, etype in all_edges:
@@ -926,17 +931,16 @@ with col_right:
     if st.session_state.report:
         rep = st.session_state.report
         status_pass = rep.overall_status == "PASS"
-        banner_cls = "green" if status_pass else "red"
-        banner_txt = "✔ VERIFIED" if status_pass else "❌ VIOLATIONS DETECTED"
-        sub_txt = "All active constraints satisfied!" if status_pass else "Violations detected against constraints."
+        banner_txt = "✔ VERIFIED (PASS)" if status_pass else "❌ VIOLATIONS DETECTED (FAIL)"
+        sub_txt = "All active constraints satisfied!" if status_pass else "Code violates extracted active constraints."
 
         st.markdown(f"""
         <div class="cg-card">
           <div class="cg-card-title">
-            <span>🛡️ Verification Results</span>
-            <span class="cg-pill">Last Run</span>
+            <span>🛡️ Verification Report</span>
+            <span class="cg-pill">Grounded Evidence</span>
           </div>
-          <div style="background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.30);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="background:rgba({'34,197,94' if status_pass else '239,68,68'},0.10);border:1px solid rgba({'34,197,94' if status_pass else '239,68,68'},0.30);border-radius:8px;padding:12px;margin-bottom:10px;">
             <div style="font-size:1.0rem;font-weight:700;color:{'#4ade80' if status_pass else '#f87171'};">{banner_txt}</div>
             <div style="font-size:0.75rem;color:#94a3b8;">{sub_txt}</div>
           </div>
@@ -956,7 +960,7 @@ with col_right:
             </div>
             """, unsafe_allow_html=True)
 
-        with st.expander("📊 Detailed Verification Matrix", expanded=False):
+        with st.expander("📊 View Grounded Evidence Dataframe", expanded=False):
             ver_rows = []
             for res in rep.results:
                 ver_rows.append({
@@ -974,17 +978,19 @@ with col_right:
     <div class="cg-card">
       <div class="cg-card-title">
         <span>🔧 Repair History</span>
-        <span class="cg-pill">{rep_count}</span>
+        <span class="cg-pill">{rep_count} attempts</span>
       </div>
     """, unsafe_allow_html=True)
 
     if st.session_state.repair_history:
         rh: RepairHistory = st.session_state.repair_history
         st.write(f"**Iterations**: `{rh.iterations_used} / 2`")
-        st.write(f"**Final Status**: `{rh.final_report.overall_status}`")
+        st.write(f"**Final Verdict**: `{rh.final_report.overall_status}`")
         with st.expander("🔍 View Before & After Code Diff", expanded=False):
             d1, d2 = st.columns(2)
+            d1.markdown("**Original Violated Code**")
             d1.code(rh.initial_code, language="python")
+            d2.markdown("**Repaired Code**")
             d2.code(rh.final_code, language="python")
     else:
         st.markdown("""
