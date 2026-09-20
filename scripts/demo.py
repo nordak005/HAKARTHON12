@@ -1,12 +1,13 @@
 """
 scripts/demo.py
 ================
-Live demo runner for ConstraintGuard.
+Live & Deterministic demo runner for ConstraintGuard.
 
-Runs 3 scenarios for hackathon judges:
+Runs standard scenarios and a Closed-Loop Repair demonstration:
   Scenario A — VIOLATION (find_max with max() prohibited)
   Scenario B — SUPERSESSION (factorial recursion superseded by no-recursion)
   Scenario C — CONFLICT (return None vs raise ValueError for empty input)
+  Scenario D — CLOSED-LOOP REPAIR (Deterministic mock repair loop)
 
 Uses rich formatting for terminal output.
 """
@@ -27,6 +28,8 @@ from rich.text import Text
 
 from constraint_guard.extractor import extract
 from constraint_guard.graph import VersionedConstraintGraph
+from constraint_guard.llm.provider import DeterministicMockProvider
+from constraint_guard.repair.loop import run_repair_loop
 from constraint_guard.resolver import ConstraintResolver
 from constraint_guard.verifier.engine import VerificationEngine
 
@@ -148,9 +151,66 @@ def run_scenario(
     console.print("-" * 75)
 
 
+def run_repair_demo():
+    console.print()
+    console.rule("[bold magenta]SCENARIO D: CLOSED-LOOP LLM REPAIR DEMO (DEMO MODE)[/bold magenta]")
+    console.print("[dim]Demonstrates initial code violation -> LLM repair -> independent re-verification[/dim]\n")
+
+    conversation = [
+        {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
+        {"turn": 2, "text": "Also handle an empty list gracefully by returning None."},
+    ]
+
+    initial_code = """\
+def find_max(lst):
+    if not lst:
+        return None
+    return max(lst)
+"""
+
+    repaired_code_mock = """\
+def find_max(lst):
+    if not lst:
+        return None
+    curr = lst[0]
+    for x in lst[1:]:
+        if x > curr:
+            curr = x
+    return curr
+"""
+
+    mock_provider = DeterministicMockProvider(
+        response_map={
+            "Do not use max()": repaired_code_mock
+        }
+    )
+
+    console.print("[bold yellow]1. Running Closed-Loop Repair Controller...[/bold yellow]")
+    history = run_repair_loop(
+        conversation=conversation,
+        initial_code=initial_code,
+        max_iterations=2,
+        provider=mock_provider,
+    )
+
+    console.print(f"Initial Code Status : [bold red]{history.initial_report.overall_status}[/bold red]")
+    console.print(f"Repair Iterations   : [bold cyan]{history.iterations_used}[/bold cyan]")
+    console.print(f"Final Code Status   : [bold green]{history.final_report.overall_status}[/bold green]\n")
+
+    syntax_init = Syntax(history.initial_code.strip(), "python", theme="monokai", line_numbers=True)
+    console.print(Panel(syntax_init, title="[bold red]ATTEMPT 0: INITIAL CODE (VIOLATED)[/bold red]", border_style="red"))
+
+    for att in history.attempts:
+        syntax_rep = Syntax(att.code.strip(), "python", theme="monokai", line_numbers=True)
+        console.print(Panel(syntax_rep, title=f"[bold green]ATTEMPT {att.iteration}: REPAIRED CODE ({att.status})[/bold green]", border_style="green"))
+
+    console.print("[bold green]CLOSED-LOOP REPAIR DEMO PASSED SUCCESSFULLY.[/bold green]")
+    console.print("-" * 75)
+
+
 def main():
     console.print("[bold green]========================================================================[/bold green]")
-    console.print("[bold green]                   CONSTRAINTGUARD LIVE DEMO RUNNER                      [/bold green]")
+    console.print("[bold green]                   CONSTRAINTGUARD LIVE & REPAIR DEMO                    [/bold green]")
     console.print("[bold green]========================================================================[/bold green]")
 
     # SCENARIO A — VIOLATION
@@ -202,7 +262,10 @@ def process_data(lst):
 """,
     )
 
-    console.print("\n[bold green]DEMO COMPLETED SUCCESSFULLY.[/bold green]\n")
+    # SCENARIO D — REPAIR DEMO
+    run_repair_demo()
+
+    console.print("\n[bold green]ALL DEMO SCENARIOS COMPLETED SUCCESSFULLY.[/bold green]\n")
 
 
 if __name__ == "__main__":

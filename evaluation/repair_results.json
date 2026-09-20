@@ -1,0 +1,55 @@
+{
+  "metrics": {
+    "total_cases": 5,
+    "initial_violations": 5,
+    "initial_violation_rate": 100.0,
+    "repaired_successes": 5,
+    "repair_success_rate": 100.0,
+    "residual_violations": 0,
+    "residual_violation_rate": 0.0,
+    "average_iterations": 1.0,
+    "constraint_preservation_rate": 100.0
+  },
+  "cases": [
+    {
+      "id": "R1_NO_BUILTIN",
+      "name": "Repair prohibited max() built-in usage",
+      "initial_status": "FAIL",
+      "final_status": "PASS",
+      "iterations_used": 1,
+      "success": true
+    },
+    {
+      "id": "R2_RECURSION",
+      "name": "Repair superseded recursion constraint violation",
+      "initial_status": "FAIL",
+      "final_status": "PASS",
+      "iterations_used": 1,
+      "success": true
+    },
+    {
+      "id": "R3_NAMING",
+      "name": "Repair function name mismatch",
+      "initial_status": "FAIL",
+      "final_status": "PASS",
+      "iterations_used": 1,
+      "success": true
+    },
+    {
+      "id": "R4_STRUCTURE",
+      "name": "Repair missing class wrapper constraint",
+      "initial_status": "FAIL",
+      "final_status": "PASS",
+      "iterations_used": 1,
+      "success": true
+    },
+    {
+      "id": "R5_MULTI_VIOLATION",
+      "name": "Repair combined max() ban and function naming violation",
+      "initial_status": "FAIL",
+      "final_status": "PASS",
+      "iterations_used": 1,
+      "success": true
+    }
+  ]
+}

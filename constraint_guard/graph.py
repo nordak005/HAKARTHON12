@@ -291,6 +291,15 @@ class VersionedConstraintGraph:
                 edges.append(data["edge"])
         return edges
 
+    def get_all_edges(self) -> list[tuple[str, str, ConstraintEdgeType]]:
+        """Return all edges in the graph as (source_id, target_id, edge_type) tuples."""
+        edges: list[tuple[str, str, ConstraintEdgeType]] = []
+        for src, tgt, data in self._graph.edges(data=True):
+            if "edge" in data:
+                edge_obj = data["edge"]
+                edges.append((src, tgt, edge_obj.edge_type))
+        return edges
+
     def node_count(self) -> int:
         return self._graph.number_of_nodes()
 
