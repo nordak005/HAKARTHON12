@@ -360,7 +360,12 @@ def log_activity(msg: str):
 
 def set_conversation(conv_list, initial_code=None):
     st.session_state.conversation = conv_list
-    st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in conv_list])
+    raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in conv_list])
+    st.session_state.conv_raw_text = raw_txt
+    if "conv_raw_textarea" in st.session_state:
+        st.session_state.conv_raw_textarea = raw_txt
+    if "custom_turn_input" in st.session_state:
+        st.session_state.custom_turn_input = ""
     if initial_code is not None:
         st.session_state.code = initial_code
     st.session_state.report = None
@@ -372,6 +377,10 @@ def clear_workspace():
     st.session_state.code = ""
     st.session_state.report = None
     st.session_state.repair_history = None
+    if "conv_raw_textarea" in st.session_state:
+        st.session_state.conv_raw_textarea = ""
+    if "custom_turn_input" in st.session_state:
+        st.session_state.custom_turn_input = ""
     log_activity("Workspace cleared completely by user.")
 
 
@@ -715,7 +724,12 @@ with col_left:
             if new_turn_input.strip():
                 next_turn_num = len(st.session_state.conversation) + 1
                 st.session_state.conversation.append({"turn": next_turn_num, "text": new_turn_input.strip()})
-                st.session_state.conv_raw_text = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+                raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+                st.session_state.conv_raw_text = raw_txt
+                if "conv_raw_textarea" in st.session_state:
+                    st.session_state.conv_raw_textarea = raw_txt
+                if "custom_turn_input" in st.session_state:
+                    st.session_state.custom_turn_input = ""
                 log_activity(f"Self-input turn added [{next_turn_num}]: {new_turn_input.strip()}")
                 st.rerun()
     with col_add2:
@@ -759,17 +773,23 @@ with col_left:
     with qp_col1:
         if st.button("🚫 Do not use max()", key="qp_max"):
             set_conversation(
-                st.session_state.conversation + [{"turn": len(st.session_state.conversation) + 1, "text": "Do not use built-in max()."}],
-                initial_code=st.session_state.code or "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+                [
+                    {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."}
+                ],
+                initial_code="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
             )
-            log_activity("Added Quick Prompt: Do not use max()")
+            log_activity("Loaded Quick Prompt: Do not use max()")
             st.rerun()
 
         if st.button("🛡️ Handle empty input", key="qp_empty"):
             set_conversation(
-                st.session_state.conversation + [{"turn": len(st.session_state.conversation) + 1, "text": "Also handle an empty list gracefully by returning None."}],
+                [
+                    {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
+                    {"turn": 2, "text": "Also handle an empty list gracefully by returning None."}
+                ],
+                initial_code="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
             )
-            log_activity("Added Quick Prompt: Handle empty input")
+            log_activity("Loaded Quick Prompt: Handle empty input")
             st.rerun()
 
         if st.button("🔒 Do not use sum()", key="qp_sum"):
@@ -777,7 +797,7 @@ with col_left:
                 [{"turn": 1, "text": "Compute sum of list without using built-in sum()."}],
                 initial_code="def compute_sum(lst):\n    return sum(lst)"
             )
-            log_activity("Added Quick Prompt: Do not use sum()")
+            log_activity("Loaded Quick Prompt: Do not use sum()")
             st.rerun()
 
     with qp_col2:
@@ -789,22 +809,26 @@ with col_left:
                 ],
                 initial_code="def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
             )
-            log_activity("Added Quick Prompt: No recursion")
+            log_activity("Loaded Quick Prompt: No recursion")
             st.rerun()
 
         if st.button("⚠️ Raise ValueError", key="qp_valerr"):
             set_conversation(
-                st.session_state.conversation + [{"turn": len(st.session_state.conversation) + 1, "text": "Raise ValueError for empty input."}],
-                initial_code=st.session_state.code or "def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
+                [
+                    {"turn": 1, "text": "Return None for empty input."},
+                    {"turn": 2, "text": "Raise ValueError for empty input."}
+                ],
+                initial_code="def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
             )
-            log_activity("Added Quick Prompt: Raise ValueError")
+            log_activity("Loaded Quick Prompt: Raise ValueError")
             st.rerun()
 
         if st.button("📝 Type Hints & PEP 8", key="qp_pep8"):
             set_conversation(
-                st.session_state.conversation + [{"turn": len(st.session_state.conversation) + 1, "text": "Use type hints and PEP 8 docstring style."}],
+                [{"turn": 1, "text": "Use type hints and PEP 8 docstring style."}],
+                initial_code="def process_items(items):\n    return items[0]"
             )
-            log_activity("Added Quick Prompt: Type Hints & PEP 8")
+            log_activity("Loaded Quick Prompt: Type Hints & PEP 8")
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
