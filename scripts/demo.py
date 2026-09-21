@@ -65,6 +65,9 @@ def run_scenario(
     all_c = graph.get_all_constraints()
     report = engine.verify(code, all_c)
 
+    # 1b. Print Visual Versioned Constraint Graph
+    console.print(Panel(graph.format_ascii_graph(), title="[bold cyan]VERSIONED CONSTRAINT GRAPH (VCG)[/bold cyan]", border_style="cyan"))
+
     # 2. Print Active Constraints Table
     active_table = Table(title="ACTIVE CONSTRAINTS (Post-Resolution)", show_header=True, header_style="bold magenta")
     active_table.add_column("ID", style="dim", width=8)

@@ -40,6 +40,59 @@ class TestCodeParsing:
     def test_empty_string(self):
         assert extract_python_code("") == ""
 
+    def test_type_fragment_and_docstring_preamble_stripping(self):
+        raw = """\
+Union[str, Iterable[Any]]
+The original input if it is non-empty.
+
+Raises
+------
+ValueError
+    If the input is empty.
+
+def find_max(numbers):
+    if not numbers:
+        return None
+
+    result = numbers[0]
+    for number in numbers[1:]:
+        if number > result:
+            result = number
+
+    return result
+"""
+        extracted = extract_python_code(raw)
+        assert "Union[str" not in extracted
+        assert "Raises" not in extracted
+        assert extracted.startswith("def find_max(numbers):")
+        assert "return result" in extracted
+
+    def test_code_block_with_leading_prose_and_docstring_specs(self):
+        raw = """\
+```python
+Union[str, Iterable[Any]]
+The original input if it is non-empty.
+
+def find_max(numbers):
+    return numbers[0]
+```
+"""
+        extracted = extract_python_code(raw)
+        assert "Union[str" not in extracted
+        assert extracted == "def find_max(numbers):\n    return numbers[0]"
+
+    def test_raw_text_with_trailing_explanation(self):
+        raw = """\
+def find_max(numbers):
+    return numbers[0]
+
+Explanation: The max() function was replaced with direct indexing.
+"""
+        extracted = extract_python_code(raw)
+        assert "Explanation:" not in extracted
+        assert extracted == "def find_max(numbers):\n    return numbers[0]"
+
+
 
 class TestLLMProviders:
     def test_fallback_provider_when_no_key(self, monkeypatch):

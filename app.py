@@ -321,7 +321,7 @@ html, body,
 """, unsafe_allow_html=True)
 
 
-# Initialize Session State Defaults
+# Initialize Session State Defaults BEFORE widget instantiations
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = os.getenv("LLM_MODEL", DEFAULT_GROQ_MODEL)
 if "model_status" not in st.session_state:
@@ -354,34 +354,51 @@ if "cg_activity_log" not in st.session_state:
         f"[{datetime.now().strftime('%H:%M:%S')}] ConstraintGuard AI Engine Initialized"
     ]
 
+# Widget Session State Keys Initialization
+if "custom_turn_input" not in st.session_state:
+    st.session_state.custom_turn_input = ""
+if "conv_raw_textarea" not in st.session_state:
+    st.session_state.conv_raw_textarea = st.session_state.conv_raw_text
+
 def log_activity(msg: str):
     timestamp = datetime.now().strftime("%H:%M:%S")
     st.session_state.cg_activity_log.insert(0, f"[{timestamp}] {msg}")
 
-def set_conversation(conv_list, initial_code=None):
-    st.session_state.conversation = conv_list
-    raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in conv_list])
-    st.session_state.conv_raw_text = raw_txt
-    if "conv_raw_textarea" in st.session_state:
+# ── Streamlit Callbacks (Executing BEFORE script reruns to prevent StreamlitAPIException) ──
+def cb_add_custom_turn():
+    """Callback triggered when user submits a new custom turn."""
+    turn_text = st.session_state.get("custom_turn_input", "").strip()
+    if turn_text:
+        next_turn_num = len(st.session_state.conversation) + 1
+        st.session_state.conversation.append({"turn": next_turn_num, "text": turn_text})
+        raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
+        st.session_state.conv_raw_text = raw_txt
         st.session_state.conv_raw_textarea = raw_txt
-    if "custom_turn_input" in st.session_state:
         st.session_state.custom_turn_input = ""
-    if initial_code is not None:
-        st.session_state.code = initial_code
-    st.session_state.report = None
-    st.session_state.repair_history = None
+        log_activity(f"Self-input turn added [{next_turn_num}]: {turn_text}")
 
-def clear_workspace():
+def cb_clear_workspace():
+    """Callback triggered to clear the workspace cleanly."""
     st.session_state.conversation = []
     st.session_state.conv_raw_text = ""
     st.session_state.code = ""
     st.session_state.report = None
     st.session_state.repair_history = None
-    if "conv_raw_textarea" in st.session_state:
-        st.session_state.conv_raw_textarea = ""
-    if "custom_turn_input" in st.session_state:
-        st.session_state.custom_turn_input = ""
+    st.session_state.conv_raw_textarea = ""
+    st.session_state.custom_turn_input = ""
     log_activity("Workspace cleared completely by user.")
+
+def cb_set_conversation(conv_list, initial_code=None):
+    """Callback triggered when loading preset scenarios or quick prompts."""
+    st.session_state.conversation = conv_list
+    raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in conv_list])
+    st.session_state.conv_raw_text = raw_txt
+    st.session_state.conv_raw_textarea = raw_txt
+    st.session_state.custom_turn_input = ""
+    if initial_code is not None:
+        st.session_state.code = initial_code
+    st.session_state.report = None
+    st.session_state.repair_history = None
 
 
 # ── Top Glass Header & AI Agent Selector ──────────────────────────────────────
@@ -432,9 +449,7 @@ with header_col2:
         st.markdown('<div class="cg-pill purple" style="margin-top:8px;">🎯 Offline Deterministic Agent (Mock Mode)</div>', unsafe_allow_html=True)
 
 with header_col3:
-    if st.button("🗑️ Clear Workspace", key="hdr_clear_btn"):
-        clear_workspace()
-        st.rerun()
+    st.button("🗑️ Clear Workspace", key="hdr_clear_btn", on_click=cb_clear_workspace)
 
 st.markdown("---")
 
@@ -622,46 +637,50 @@ st.markdown("""
 
 preset_col1, preset_col2, preset_col3, preset_col4 = st.columns(4)
 with preset_col1:
-    if st.button("🚫 Scenario A: Built-in max() Prohibition", key="scen_a_btn"):
-        set_conversation(
+    st.button(
+        "🚫 Scenario A: Built-in max() Prohibition",
+        key="scen_a_btn",
+        on_click=cb_set_conversation,
+        args=(
             [
                 {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
                 {"turn": 2, "text": "Also handle an empty list gracefully by returning None."},
                 {"turn": 3, "text": "Keep the previous restrictions."},
             ],
-            initial_code="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
-        )
-        log_activity("Loaded Scenario A preset.")
-        st.rerun()
+            "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+        ),
+    )
 
 with preset_col2:
-    if st.button("🔄 Scenario B: Recursion Supersession", key="scen_b_btn"):
-        set_conversation(
+    st.button(
+        "🔄 Scenario B: Recursion Supersession",
+        key="scen_b_btn",
+        on_click=cb_set_conversation,
+        args=(
             [
                 {"turn": 1, "text": "Use recursion to compute factorial."},
                 {"turn": 2, "text": "Do not use recursion. Write an iterative solution instead."},
             ],
-            initial_code="def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
-        )
-        log_activity("Loaded Scenario B preset.")
-        st.rerun()
+            "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
+        ),
+    )
 
 with preset_col3:
-    if st.button("⚠️ Scenario C: Unresolved Conflict", key="scen_c_btn"):
-        set_conversation(
+    st.button(
+        "⚠️ Scenario C: Unresolved Conflict",
+        key="scen_c_btn",
+        on_click=cb_set_conversation,
+        args=(
             [
                 {"turn": 1, "text": "Return None for empty input."},
                 {"turn": 2, "text": "Raise ValueError for empty input."},
             ],
-            initial_code="def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
-        )
-        log_activity("Loaded Scenario C preset.")
-        st.rerun()
+            "def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
+        ),
+    )
 
 with preset_col4:
-    if st.button("🗑️ Clear Workspace", key="hero_clear_btn"):
-        clear_workspace()
-        st.rerun()
+    st.button("🗑️ Clear Workspace", key="hero_clear_btn", on_click=cb_clear_workspace)
 
 
 # Compute extracted graph and resolved state
@@ -711,7 +730,7 @@ with col_left:
 
     # Self-Input Form: User enters custom turn prompt
     st.markdown('<div style="font-size:0.72rem;font-weight:600;color:#94a3b8;margin-top:12px;margin-bottom:4px;">✏️ SELF-INPUT: ADD YOUR OWN PROMPT TURN</div>', unsafe_allow_html=True)
-    new_turn_input = st.text_input(
+    st.text_input(
         "Enter your custom requirement prompt...",
         key="custom_turn_input",
         placeholder="e.g. Write a function to compute factorial without recursion",
@@ -720,22 +739,14 @@ with col_left:
     
     col_add1, col_add2 = st.columns([2, 1])
     with col_add1:
-        if st.button("➕ Add Turn & Extract", key="add_turn_btn", type="primary"):
-            if new_turn_input.strip():
-                next_turn_num = len(st.session_state.conversation) + 1
-                st.session_state.conversation.append({"turn": next_turn_num, "text": new_turn_input.strip()})
-                raw_txt = "\n".join([f"Turn {t['turn']}: {t['text']}" for t in st.session_state.conversation])
-                st.session_state.conv_raw_text = raw_txt
-                if "conv_raw_textarea" in st.session_state:
-                    st.session_state.conv_raw_textarea = raw_txt
-                if "custom_turn_input" in st.session_state:
-                    st.session_state.custom_turn_input = ""
-                log_activity(f"Self-input turn added [{next_turn_num}]: {new_turn_input.strip()}")
-                st.rerun()
+        st.button(
+            "➕ Add Turn & Extract",
+            key="add_turn_btn",
+            type="primary",
+            on_click=cb_add_custom_turn,
+        )
     with col_add2:
-        if st.button("🗑️ Reset", key="reset_turns_btn"):
-            clear_workspace()
-            st.rerun()
+        st.button("🗑️ Reset", key="reset_turns_btn", on_click=cb_clear_workspace)
 
     # Raw Turn Editor Expander (Allow direct multi-line turn text editing)
     with st.expander("📝 Custom Multi-Turn Raw Text Editor", expanded=False):
@@ -763,7 +774,7 @@ with col_left:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Expanded Quick Prompt Shortcuts (Connecting directly to backend)
+    # Expanded Quick Prompt Shortcuts (Connecting directly to backend via callbacks)
     st.markdown("""
     <div class="cg-card">
       <div class="cg-card-title">⚡ Quick Constraint Examples &amp; Shortcuts</div>
@@ -771,65 +782,75 @@ with col_left:
     
     qp_col1, qp_col2 = st.columns(2)
     with qp_col1:
-        if st.button("🚫 Do not use max()", key="qp_max"):
-            set_conversation(
-                [
-                    {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."}
-                ],
-                initial_code="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
-            )
-            log_activity("Loaded Quick Prompt: Do not use max()")
-            st.rerun()
+        st.button(
+            "🚫 Do not use max()",
+            key="qp_max",
+            on_click=cb_set_conversation,
+            args=(
+                [{"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."}],
+                "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+            ),
+        )
 
-        if st.button("🛡️ Handle empty input", key="qp_empty"):
-            set_conversation(
+        st.button(
+            "🛡️ Handle empty input",
+            key="qp_empty",
+            on_click=cb_set_conversation,
+            args=(
                 [
                     {"turn": 1, "text": "Write a function that finds the maximum value in a list. Do not use max()."},
                     {"turn": 2, "text": "Also handle an empty list gracefully by returning None."}
                 ],
-                initial_code="def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
-            )
-            log_activity("Loaded Quick Prompt: Handle empty input")
-            st.rerun()
+                "def find_max(lst):\n    if not lst:\n        return None\n    return max(lst)"
+            ),
+        )
 
-        if st.button("🔒 Do not use sum()", key="qp_sum"):
-            set_conversation(
+        st.button(
+            "🔒 Do not use sum()",
+            key="qp_sum",
+            on_click=cb_set_conversation,
+            args=(
                 [{"turn": 1, "text": "Compute sum of list without using built-in sum()."}],
-                initial_code="def compute_sum(lst):\n    return sum(lst)"
-            )
-            log_activity("Loaded Quick Prompt: Do not use sum()")
-            st.rerun()
+                "def compute_sum(lst):\n    return sum(lst)"
+            ),
+        )
 
     with qp_col2:
-        if st.button("🔄 No recursion (Iterative)", key="qp_recur"):
-            set_conversation(
+        st.button(
+            "🔄 No recursion (Iterative)",
+            key="qp_recur",
+            on_click=cb_set_conversation,
+            args=(
                 [
                     {"turn": 1, "text": "Compute factorial."},
                     {"turn": 2, "text": "Do not use recursion. Write an iterative solution instead."}
                 ],
-                initial_code="def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
-            )
-            log_activity("Loaded Quick Prompt: No recursion")
-            st.rerun()
+                "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)"
+            ),
+        )
 
-        if st.button("⚠️ Raise ValueError", key="qp_valerr"):
-            set_conversation(
+        st.button(
+            "⚠️ Raise ValueError",
+            key="qp_valerr",
+            on_click=cb_set_conversation,
+            args=(
                 [
                     {"turn": 1, "text": "Return None for empty input."},
                     {"turn": 2, "text": "Raise ValueError for empty input."}
                 ],
-                initial_code="def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
-            )
-            log_activity("Loaded Quick Prompt: Raise ValueError")
-            st.rerun()
+                "def process_data(lst):\n    if not lst:\n        return None\n    return lst[0]"
+            ),
+        )
 
-        if st.button("📝 Type Hints & PEP 8", key="qp_pep8"):
-            set_conversation(
+        st.button(
+            "📝 Type Hints & PEP 8",
+            key="qp_pep8",
+            on_click=cb_set_conversation,
+            args=(
                 [{"turn": 1, "text": "Use type hints and PEP 8 docstring style."}],
-                initial_code="def process_items(items):\n    return items[0]"
-            )
-            log_activity("Loaded Quick Prompt: Type Hints & PEP 8")
-            st.rerun()
+                "def process_items(items):\n    return items[0]"
+            ),
+        )
 
     st.markdown("</div>", unsafe_allow_html=True)
 

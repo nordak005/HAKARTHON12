@@ -14,8 +14,12 @@ OUTPUT FORMAT: Return ONLY valid Python code inside a ```python ``` code block. 
 
 REPAIR_SYSTEM_PROMPT = """\
 You are an expert Python code repair engine.
-Your goal is to modify the provided Python code to satisfy ALL active constraints while preserving previous satisfied behavior.
-OUTPUT FORMAT: Return ONLY valid Python code inside a ```python ``` code block. Do not include markdown explanations outside the code block.
+Your goal is to modify the provided Python code to satisfy ALL active constraints while preserving satisfied behavior.
+
+CRITICAL OUTPUT FORMAT REQUIREMENTS:
+- Output ONLY valid, executable Python source code inside a ```python ``` code block.
+- Do NOT output type signature descriptions (e.g. Union[...]), docstring specification blocks (e.g. Raises/Returns/Parameters), preamble text, markdown explanations, or prose commentary outside or inside the code block.
+- Return ONLY clean Python code.
 """
 
 
@@ -76,6 +80,10 @@ def build_repair_prompt(
     prompt_lines.append(
         "Modify the code so that ALL VIOLATED constraints are resolved and ALL ACTIVE constraints are satisfied."
     )
-    prompt_lines.append("Do not explain the answer. Return ONLY the corrected Python code inside a ```python ``` block.")
+    prompt_lines.append(
+        "IMPORTANT: Return ONLY the repaired Python code inside a ```python ``` block. "
+        "Do NOT include explanations, markdown text outside the code block, type specifications (e.g. Union[...]), or docstring fragments."
+    )
 
     return "\n".join(prompt_lines)
+

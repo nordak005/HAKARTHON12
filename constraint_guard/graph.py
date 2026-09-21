@@ -306,6 +306,64 @@ class VersionedConstraintGraph:
     def edge_count(self) -> int:
         return self._graph.number_of_edges()
 
+    def format_ascii_graph(self) -> str:
+        """Return a human-readable ASCII representation of the Versioned Constraint Graph."""
+        lines = []
+        lines.append("🕸️  VERSIONED CONSTRAINT GRAPH (VCG)")
+        lines.append("=" * 60)
+        lines.append(f"Nodes: {self.node_count()} | Edges: {self.edge_count()}\n")
+
+        lines.append("┌─ GRAPH NODES (Constraints) ──────────────────────────┐")
+        all_c = self.get_all_constraints()
+        if not all_c:
+            lines.append("  (No constraint nodes in graph)")
+        for c in all_c:
+            status_icon = (
+                "[ACTIVE 🟢]" if c.status.value == "ACTIVE"
+                else "[SUPERSEDED 🟡]" if c.status.value == "SUPERSEDED"
+                else "[CONFLICTING 🔴]"
+            )
+            target_str = f" target={c.target}" if c.target else ""
+            lines.append(f"  ● {c.id:<8} {status_icon:<16} (Turn {c.source_turn} | {c.type.value}{target_str})")
+            lines.append(f"    Text: \"{c.text}\"")
+
+        lines.append("\n┌─ GRAPH EDGES (Temporal & Semantic Relations) ────────┐")
+
+        raw_edges = []
+        for src, tgt, data in self._graph.edges(data=True):
+            if "edge" in data:
+                raw_edges.append(data["edge"])
+
+        if not raw_edges:
+            lines.append("  (No directional edges / relationships detected)")
+        else:
+            processed_pairs = set()
+            for edge in raw_edges:
+                pair = frozenset({edge.source_id, edge.target_id})
+                if edge.edge_type == ConstraintEdgeType.CONFLICTS and pair in processed_pairs:
+                    continue
+
+                if edge.edge_type == ConstraintEdgeType.SUPERSEDES:
+                    arrow = "───( SUPERSEDES )───►"
+                    lines.append(f"  [{edge.source_id}] {arrow} [{edge.target_id}]")
+                    if edge.reason:
+                        lines.append(f"      Reason: {edge.reason}")
+                elif edge.edge_type == ConstraintEdgeType.CONFLICTS:
+                    arrow = "◄───( CONFLICTS )───►"
+                    lines.append(f"  [{edge.source_id}] {arrow} [{edge.target_id}]")
+                    if edge.reason:
+                        lines.append(f"      Reason: {edge.reason}")
+                    processed_pairs.add(pair)
+                else:
+                    arrow = f"───( {edge.edge_type.value} )───►"
+                    lines.append(f"  [{edge.source_id}] {arrow} [{edge.target_id}]")
+                    if edge.reason:
+                        lines.append(f"      Reason: {edge.reason}")
+
+        lines.append("└──────────────────────────────────────────────────────┘")
+        return "\n".join(lines)
+
+
     # ------------------------------------------------------------------ builders
 
     @classmethod
